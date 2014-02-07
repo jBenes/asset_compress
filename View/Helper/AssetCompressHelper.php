@@ -324,26 +324,51 @@ class AssetCompressHelper extends AppHelper {
  * @return A script tag
  */
 	public function script($file, $options = array()) {
-		$file = $this->_addExt($file, '.js');
 		$config = $this->config();
-		$buildFiles = $config->files($file);
-		if (!$buildFiles) {
-			throw new RuntimeException('Cannot create a script tag for a build that does not exist.');
-		}
-		if (!empty($options['raw'])) {
-			$output = '';
-			unset($options['raw']);
-			$scanner = new AssetScanner($config->paths('js', $file), $this->theme);
-			foreach ($buildFiles as $part) {
-				$part = $scanner->resolve($part, false);
-				$output .= $this->Html->script($part, $options);
+
+		if(isset($options['ts'])) {
+			App::uses('Folder', 'Utility');
+			App::uses('File', 'Utility');
+			$dir = new Folder($config->cachePath('js'));
+			$files = $dir->find('.*\.js');
+			$file = null;
+			$time = null;
+			foreach ($files as $cache_file) {
+				$cache_file = new File($dir->pwd() . DS . $cache_file);
+				if($file == null) {
+					$time = $cache_file->lastChange();
+					$file = $cache_file->name();
+					$cache_file->close();
+					continue;
+				}
+				if( $cache_file->lastChange() > $time) {
+					$time = $cache_file->lastChange();
+					$file = $cache_file->name();
+				}
+				$cache_file->close();
 			}
-			return $output;
 		}
 
+		$file = $this->_addExt($file, '.js');
+		if(!isset($options['ts'])) {
+			$buildFiles = $config->files($file);
+			if (!$buildFiles) {
+				throw new RuntimeException('Cannot create a script tag for a build that does not exist.');
+			}
+			if (!empty($options['raw'])) {
+				$output = '';
+				unset($options['raw']);
+				$scanner = new AssetScanner($config->paths('js', $file), $this->theme);
+				foreach ($buildFiles as $part) {
+					$part = $scanner->resolve($part, false);
+					$output .= $this->Html->script($part, $options);
+				}
+				return $output;
+			}
+		}
 		$url = $this->url($file, $options);
 		unset($options['full']);
-
+		unset($options['ts']);
 		return $this->Html->script($url, $options);
 	}
 
@@ -360,9 +385,9 @@ class AssetCompressHelper extends AppHelper {
  */
 	public function url($file = null, $full = false) {
 		$config = $this->config();
-		if (!$config->exists($file)) {
+		/*if (!$config->exists($file)) {
 			throw new Exception('Cannot get URL for build file that does not exist.');
-		}
+		}*/
 
 		$options = $full;
 		if (!is_array($full)) {
