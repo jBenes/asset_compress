@@ -289,7 +289,13 @@ class AssetCompressHelper extends AppHelper {
 		if(isset($options['ts'])) {
 			App::uses('Folder', 'Utility');
 			App::uses('File', 'Utility');
-			$dir = new Folder($config->cachePath('css'));
+			if(isset($options['web'])) {
+		    	$folder = str_replace('.', '_', $_SERVER['SERVER_NAME']);
+				$cachePath = APP . '../../' . $folder . '/cache_css/';
+			} else {
+				$cachePath = $config->cachePath('css');	
+			}
+			$dir = new Folder($cachePath);
 			$files = $dir->find('.*\.css');
 			$file = null;
 			$time = null;
@@ -327,10 +333,14 @@ class AssetCompressHelper extends AppHelper {
 				return $output;
 			}
 		}
+		if(isset($options['web'])) {
+			return '<link type="text/css" rel="stylesheet" href="/cache_css/' . $file . '" />';
+		}
 		$url = $this->url($file, $options);
 		unset($options['full']);
 		unset($options['ts']);
-		return $this->Html->css($url, null, $options);
+		unset($options['web']);
+		return str_replace('/admin', '', $this->Html->css($url, null, $options));
 	}
 
 /**
@@ -355,7 +365,13 @@ class AssetCompressHelper extends AppHelper {
 		if(isset($options['ts'])) {
 			App::uses('Folder', 'Utility');
 			App::uses('File', 'Utility');
-			$dir = new Folder($config->cachePath('js'));
+			if(isset($options['web'])) {
+		    	$folder = str_replace('.', '_', $_SERVER['SERVER_NAME']);
+				$cachePath = APP . '../../' . $folder . '/cache_js/';
+			} else {
+				$cachePath = $config->cachePath('js');	
+			}
+			$dir = new Folder($cachePath);
 			$files = $dir->find('.*\.js');
 			$file = null;
 			$time = null;
@@ -392,10 +408,14 @@ class AssetCompressHelper extends AppHelper {
 				return $output;
 			}
 		}
+		if(isset($options['web'])) {
+			return '<script type="text/javascript" src="/cache_js/' . $file . '"></script>';
+		}
 		$url = $this->url($file, $options);
 		unset($options['full']);
 		unset($options['ts']);
-		return $this->Html->script($url, $options);
+		unset($options['web']);
+		return str_replace('/admin', '', $this->Html->script($url, $options));
 	}
 
 /**
