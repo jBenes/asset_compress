@@ -61,15 +61,15 @@ class AssetCompressShell extends AppShell {
 		$folder = str_replace('.', '_', $this->params['domain']);
 		$this->_Config->cachePath('js', APP . '../../' . $folder . DS . 'cache_js');
 		$this->_Config->cachePath('css', APP . '../../' . $folder . DS . 'cache_css');
-
+		// get domains list of css and js libs
 		$web = $this->Web->findByDomain($domain);
-
+		// add js and css libs to config
 		$this->_Config->addTarget('main.js', array('files' => $web['Web']['js']));
 		$this->_Config->addTarget('main.css', array('files' => $web['Web']['css']));
-
+		// add css and js paths
 		$this->_Config->paths('js', null, array(APP . '../../' . $folder . DS . 'js/*'));
 		$this->_Config->paths('css', null, array(APP . '../../' . $folder . DS . 'css/*'));
-
+		// build assets by config
 		$this->AssetBuild->setConfig($this->_Config);
 		$this->AssetBuild->buildIni();
 	}

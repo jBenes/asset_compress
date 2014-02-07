@@ -284,26 +284,52 @@ class AssetCompressHelper extends AppHelper {
  * @return A stylesheet tag
  */
 	public function css($file, $options = array()) {
-		$file = $this->_addExt($file, '.css');
 		$config = $this->config();
-		$buildFiles = $config->files($file);
-		if (!$buildFiles) {
-			throw new RuntimeException('Cannot create a stylesheet tag for a build that does not exist.');
-		}
-		$output = '';
-		if (!empty($options['raw'])) {
-			unset($options['raw']);
-			$scanner = new AssetScanner($config->paths('css', $file), $this->theme);
-			foreach ($buildFiles as $part) {
-				$part = $scanner->resolve($part, false);
-				$part = str_replace(DS, '/', $part);
-				$output .= $this->Html->css($part, null, $options);
+
+		if(isset($options['ts'])) {
+			App::uses('Folder', 'Utility');
+			App::uses('File', 'Utility');
+			$dir = new Folder($config->cachePath('css'));
+			$files = $dir->find('.*\.css');
+			$file = null;
+			$time = null;
+			foreach ($files as $cache_file) {
+				$cache_file = new File($dir->pwd() . DS . $cache_file);
+				if($file == null) {
+					$time = $cache_file->lastChange();
+					$file = $cache_file->name();
+					$cache_file->close();
+					continue;
+				}
+				if( $cache_file->lastChange() > $time) {
+					$time = $cache_file->lastChange();
+					$file = $cache_file->name();
+				}
+				$cache_file->close();
 			}
-			return $output;
 		}
 
+		$file = $this->_addExt($file, '.css');
+		if(!isset($options['ts'])) {
+			$buildFiles = $config->files($file);
+			if (!$buildFiles) {
+				throw new RuntimeException('Cannot create a stylesheet tag for a build that does not exist.');
+			}
+			$output = '';
+			if (!empty($options['raw'])) {
+				unset($options['raw']);
+				$scanner = new AssetScanner($config->paths('css', $file), $this->theme);
+				foreach ($buildFiles as $part) {
+					$part = $scanner->resolve($part, false);
+					$part = str_replace(DS, '/', $part);
+					$output .= $this->Html->css($part, null, $options);
+				}
+				return $output;
+			}
+		}
 		$url = $this->url($file, $options);
 		unset($options['full']);
+		unset($options['ts']);
 		return $this->Html->css($url, null, $options);
 	}
 
@@ -398,7 +424,8 @@ class AssetCompressHelper extends AppHelper {
 
 		$baseUrl = $config->get($type . '.baseUrl');
 		$path = $config->get($type . '.cachePath');
-		$devMode = Configure::read('debug') > 0;
+		//$devMode = Configure::read('debug') > 0;
+		$devMode = true;
 
 		// CDN routes.
 		if ($baseUrl && !$devMode) {
