@@ -16,6 +16,8 @@ class AssetCompressShell extends AppShell {
 
 	public $tasks = array('AssetCompress.AssetBuild');
 
+	public $uses = array('Web');
+
 /**
  * Create the configuration object used in other classes.
  *
@@ -46,6 +48,28 @@ class AssetCompressShell extends AppShell {
 	}
 
 	public function build_ini() {
+		$this->AssetBuild->setConfig($this->_Config);
+		$this->AssetBuild->buildIni();
+	}
+
+	public function build_domain() {
+
+		if(!isset($this->params['domain'])) $this->error('You have to define domain');
+		// domain
+		$domain = $this->params['domain'];
+		// change dot for underscores in folder name
+		$folder = str_replace('.', '_', $this->params['domain']);
+		$this->_Config->cachePath('js', APP . '../../' . $folder . DS . 'cache_js');
+		$this->_Config->cachePath('css', APP . '../../' . $folder . DS . 'cache_css');
+
+		$web = $this->Web->findByDomain($domain);
+
+		$this->_Config->addTarget('main.js', array('files' => $web['Web']['js']));
+		$this->_Config->addTarget('main.css', array('files' => $web['Web']['css']));
+
+		$this->_Config->paths('js', null, array(APP . '../../' . $folder . DS . 'js/*'));
+		$this->_Config->paths('css', null, array(APP . '../../' . $folder . DS . 'css/*'));
+
 		$this->AssetBuild->setConfig($this->_Config);
 		$this->AssetBuild->buildIni();
 	}
@@ -182,10 +206,16 @@ class AssetCompressShell extends AppShell {
 			'help' => 'Generate only build files defined in the ini file.'
 		))->addSubcommand('build_dynamic', array(
 			'help' => 'Build build files defined in view files.'
+		))->addSubcommand('build_domain', array(
+			'help' => 'Build build files for a domain.'
 		))->addOption('config', array(
 			'help' => 'Choose the config file to use.',
 			'short' => 'c',
 			'default' => APP . 'Config' . DS . 'asset_compress.ini'
+		))->addOption('domain', array(
+			'help' => 'Choose domain to build.',
+			'short' => 'd',
+			'default' => null
 		))->addOption('force', array(
 			'help' => 'Force assets to rebuild. Ignores timestamp rules.',
 			'short' => 'f',
