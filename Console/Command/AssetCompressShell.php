@@ -10,6 +10,7 @@ App::uses('Folder', 'Utility');
  * Asset Compress Shell
  *
  * Assists in clearing and creating the build files this plugin makes.
+ * Console/cake AssetCompress.AssetCompress build_ini
  *
  */
 class AssetCompressShell extends AppShell {
